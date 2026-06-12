@@ -22,13 +22,14 @@ export interface Sprite {
 
 // Conservative on purpose: keeps the viewBox and every paint attribute so
 // `currentColor`, stroke, and fill survive for both stroke- and fill-based icons.
+// SVGO v4 dropped removeViewBox from preset-default, so viewBox is kept by
+// default; removeDimensions then strips the redundant width/height.
 export const defaultSvgoConfig: SvgoConfig = {
   plugins: [
     {
       name: "preset-default",
       params: {
         overrides: {
-          removeViewBox: false,
           removeUselessStrokeAndFill: false,
         },
       },
