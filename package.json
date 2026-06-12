@@ -1,0 +1,56 @@
+{
+  "name": "@lattice-php/vite-svg-sprite",
+  "version": "0.1.0",
+  "description": "Vite plugin that compiles a folder of SVGs into a single sprite and exposes it via a virtual module.",
+  "license": "MIT",
+  "author": "Manuel Christlieb <manuel@christlieb.eu>",
+  "type": "module",
+  "keywords": [
+    "vite",
+    "vite-plugin",
+    "svg",
+    "sprite",
+    "icons"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lattice-php/vite-svg-sprite.git"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./client.d.ts"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "client.d.ts"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "prepack": "npm run build"
+  },
+  "peerDependencies": {
+    "vite": ">=6"
+  },
+  "dependencies": {
+    "svgo": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.7.0",
+    "vite": "^8.0.0",
+    "vitest": "^4.0.0"
+  }
+}
