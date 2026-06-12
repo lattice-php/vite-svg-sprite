@@ -1,9 +1,8 @@
 declare module "virtual:svg-sprite" {
-  /** External sprite URL in production builds; empty string in dev. */
+  /** External sprite URL in builds; empty in dev (the sprite is inlined). */
   export const href: string;
-  /** Every symbol id available in the sprite. */
   export const ids: string[];
-  /** Inline sprite markup in dev (for same-document `<use>`); empty in builds. */
+  /** Inline sprite markup in dev; empty in builds. */
   export const source: string;
 
   const sprite: { href: string; ids: string[]; source: string };

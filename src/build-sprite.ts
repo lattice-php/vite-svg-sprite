@@ -3,40 +3,25 @@ import { basename, extname, join, resolve } from "node:path";
 import { optimize, type Config as SvgoConfig } from "svgo";
 
 export interface SymbolIdContext {
-  /** The file's basename without extension, e.g. `house` for `house.svg`. */
   name: string;
-  /** The (resolved) source directory the file was found in. */
   dir: string;
-  /** The full path to the SVG file. */
   path: string;
 }
 
 export interface BuildSpriteOptions {
-  /**
-   * Derive the `<symbol id>` from a discovered file. Defaults to the filename
-   * without extension, so `house.svg` becomes `#house`.
-   */
+  /** Derive the `<symbol id>` from a file. Defaults to the filename. */
   symbolId?: (context: SymbolIdContext) => string;
-  /**
-   * SVGO configuration, or `false` to skip optimization. The default keeps the
-   * `viewBox`, preserves `currentColor`, and never strips the stroke/fill that
-   * draws the glyph — safe for both stroke-based (lucide) and fill-based icons.
-   */
+  /** SVGO config, or `false` to skip optimization. */
   svgoConfig?: SvgoConfig | false;
 }
 
 export interface Sprite {
-  /** The assembled `<svg>` sprite document containing every `<symbol>`. */
   source: string;
-  /** Every symbol id present in the sprite, sorted. */
   ids: string[];
 }
 
-/**
- * The default SVGO config. Intentionally conservative: it preserves `viewBox`
- * and any paint attributes (so `currentColor`, stroke, and fill keep working)
- * and only drops width/height in favour of the viewBox.
- */
+// Conservative on purpose: keeps the viewBox and every paint attribute so
+// `currentColor`, stroke, and fill survive for both stroke- and fill-based icons.
 export const defaultSvgoConfig: SvgoConfig = {
   plugins: [
     {
@@ -64,11 +49,8 @@ const DROPPED_ROOT_ATTRIBUTES = new Set([
   "version",
 ]);
 
-/**
- * Turn a standalone `<svg>` document into a `<symbol>`, carrying over the
- * viewBox and presentation attributes (stroke, fill, …) so the glyph still
- * paints once referenced through `<use>`.
- */
+// Carries the viewBox and presentation attributes onto the symbol so the glyph
+// still paints once referenced through `<use>`.
 export function svgToSymbol(id: string, svg: string): string {
   const match = ROOT_SVG.exec(svg.trim());
 
@@ -102,17 +84,12 @@ function discoverSvgFiles(dir: string): string[] {
     .sort();
 }
 
-/**
- * Compile every `*.svg` under `iconDirs` into one sprite. Later directories win
- * on id collisions, so callers should order shared/base directories first and
- * project-specific ones last.
- */
+// Later directories win on id collisions, so order base/shared dirs first.
 export function buildSprite(iconDirs: string[], options: BuildSpriteOptions = {}): Sprite {
   const symbolId = options.symbolId ?? (({ name }) => name);
   const svgoConfig = options.svgoConfig === false ? null : (options.svgoConfig ?? defaultSvgoConfig);
 
-  // Map keeps insertion order but later writes override earlier ones, which is
-  // exactly the precedence we want (project dirs override base dirs).
+  // Re-setting a key overrides the earlier symbol — exactly the precedence we want.
   const symbols = new Map<string, string>();
 
   for (const rawDir of iconDirs) {

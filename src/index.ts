@@ -3,25 +3,17 @@ import type { Plugin } from "vite";
 import { buildSprite, type BuildSpriteOptions, type Sprite } from "./build-sprite.js";
 
 export interface SvgSpriteOptions extends BuildSpriteOptions {
-  /** Directories to glob for `*.svg` files. Later directories win on collisions. */
+  /** Directories globbed for `*.svg`. Later directories win on collisions. */
   iconDirs: string[];
-  /** The virtual module id app code imports. Defaults to `virtual:svg-sprite`. */
   virtualModuleId?: string;
-  /** The emitted asset's base name in production builds. Defaults to `sprite.svg`. */
   assetName?: string;
 }
 
-/**
- * Compiles `iconDirs` into one SVG sprite and exposes it through a virtual
- * module that exports `{ href, ids, source }`:
- *
- * - **build**: the sprite is emitted as a hashed asset and `href` resolves to
- *   its final URL; `source` is empty.
- * - **serve**: `href` is empty and `source` holds the sprite markup, so callers
- *   can inline it and use same-document `<use href="#id">` references. This
- *   keeps dev working regardless of where the page is served from (e.g. a PHP
- *   backend on a different origin than the Vite dev server).
- */
+// Exposes the sprite through a virtual module that exports `{ href, ids, source }`.
+// In builds the sprite is emitted as a hashed asset and `href` resolves to it; in
+// dev `href` is empty and `source` holds the markup, so callers inline it and use
+// same-document `<use href="#id">` — which works even when the page is served from
+// a different origin than the Vite dev server (e.g. a PHP backend).
 export function svgSprite(options: SvgSpriteOptions): Plugin {
   const virtualModuleId = options.virtualModuleId ?? "virtual:svg-sprite";
   const resolvedVirtualModuleId = `\0${virtualModuleId}`;
@@ -40,7 +32,7 @@ export function svgSprite(options: SvgSpriteOptions): Plugin {
     const ids = JSON.stringify(sprite.ids);
 
     if (command === "build") {
-      // Rollup rewrites this to the final (hashed, base-prefixed) asset URL.
+      // Rollup rewrites the placeholder to the final hashed, base-prefixed URL.
       return (
         `export const href = import.meta.ROLLUP_FILE_URL_${referenceId};\n` +
         `export const ids = ${ids};\n` +
