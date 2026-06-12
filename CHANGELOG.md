@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/lattice-php/vite-svg-sprite/compare/0.1.0...0.2.0) (2026-06-12)
+
+
+### Features
+
+* vendor icons, build sprite, and generate a typed module ([b2abf6c](https://github.com/lattice-php/vite-svg-sprite/commit/b2abf6cd4bfdb4f53878c9774bf151384c961846))
+
 ## [0.1.0](https://github.com/lattice-php/vite-svg-sprite/compare/0.1.0...0.1.0) (2026-06-12)
 
 
