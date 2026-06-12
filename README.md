@@ -59,11 +59,96 @@ import sprite from "virtual:svg-sprite";
 
 | Option            | Default               | Description                                                        |
 | ----------------- | --------------------- | ------------------------------------------------------------------ |
-| `iconDirs`        | —                     | Directories globbed for `*.svg` (recursive). Later dirs win.       |
+| `iconDirs`        | `[]`                  | Directories globbed for `*.svg` (recursive). Later dirs win.       |
+| `include`         | `[]`                  | `[{ from, names, outDir }]` — idempotently vendor named icons from a source into `outDir` before building; each `outDir` is globbed like an iconDir. |
+| `dts`             | —                     | `{ file, augmentModule?, augmentInterface? }` — generate a typed module of the icon names (see below). |
+| `phpEnum`         | —                     | `{ file, namespace, enum?, caseName? }` — generate a backed PHP enum of the icon names (see below). |
 | `virtualModuleId` | `"virtual:svg-sprite"`| The id app code imports.                                           |
 | `assetName`       | `"sprite.svg"`        | Base name of the emitted asset in builds.                          |
 | `symbolId`        | filename              | `({ name, dir, path }) => string` to derive each `<symbol id>`.    |
 | `svgoConfig`      | conservative preset   | SVGO config, or `false` to skip optimization.                      |
+
+With `include`, a library can pull a fixed icon set from a package and commit the
+result, without a separate sync script:
+
+```ts
+svgSprite({
+  include: [{ from: "lucide-static/icons", names: ["house", "x"], outDir: "resources/icons" }],
+  iconDirs: ["app/icons"],
+})
+```
+
+## Vendoring icons from a package
+
+`extractIcons` idempotently copies named icons out of an installed icon package
+(or any directory) into a folder you commit — handy for a library that wants to
+ship a fixed set of icons without depending on the source package at build time.
+
+```ts
+import { extractIcons } from "@lattice-php/vite-svg-sprite";
+
+extractIcons({
+  from: "lucide-static/icons",        // package specifier or directory
+  names: ["house", "settings", "x"],  // filenames without .svg
+  outDir: "resources/icons",
+});
+```
+
+It writes only files whose content changed, removes any `*.svg` no longer in
+`names`, and throws if a requested icon is missing from the source — so running
+it twice is a no-op.
+
+## Generating a type for the icons
+
+The `dts` option (or the standalone `writeIconTypes`) emits a module of the
+sprite's icon names — an importable `IconName` union plus an `iconNames` const:
+
+```ts
+svgSprite({
+  iconDirs: ["resources/icons"],
+  dts: {
+    file: "resources/js/sprite-icons.ts",
+    // Optional: augment a module's interface so a `name` prop autocompletes.
+    augmentModule: "@my-lib/ui",
+    augmentInterface: "KnownIcons",
+  },
+})
+```
+
+```ts
+// generated, committable, idempotent
+export const iconNames = ["house", "x", …] as const;
+export type IconName = (typeof iconNames)[number];
+```
+
+## Generating a PHP enum
+
+The `phpEnum` option (or the standalone `writePhpEnum`) emits a backed string enum
+so a PHP backend can pick icons type-safely:
+
+```ts
+svgSprite({
+  iconDirs: ["resources/icons"],
+  phpEnum: { file: "src/Enums/Icon.php", namespace: "App\\Enums", enum: "Icon" },
+})
+```
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Enums;
+
+enum Icon: string
+{
+    case House = 'house';
+    case ArrowDown = 'arrow-down';
+}
+```
+
+Case names default to PascalCase (override via `caseName`); it throws if two icon
+names collapse to the same case.
 
 ## License
 

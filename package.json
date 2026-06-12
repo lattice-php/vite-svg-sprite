@@ -1,7 +1,7 @@
 {
   "name": "@lattice-php/vite-svg-sprite",
   "version": "0.1.0",
-  "description": "Vite plugin that compiles a folder of SVGs into a single sprite and exposes it via a virtual module.",
+  "description": "Vite plugin to vendor SVGs from icon packages, build an SVG sprite from folders, and generate a typed module and/or PHP enum of the icon names.",
   "license": "MIT",
   "author": "Manuel Christlieb <manuel@christlieb.eu>",
   "type": "module",

@@ -1,7 +1,9 @@
+import { existsSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build, type Rollup } from "vite";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { svgSprite } from "../src/index.js";
 
 const fixtures = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
@@ -52,5 +54,24 @@ describe("svgSprite plugin (build)", () => {
     await expect(
       buildWith([svgSprite({ iconDirs: [baseDir], virtualModuleId: "virtual:other" })]),
     ).rejects.toThrow();
+  });
+
+  describe("include", () => {
+    const outDir = join(tmpdir(), "vite-svg-sprite-include-test");
+    afterEach(() => rmSync(outDir, { recursive: true, force: true }));
+
+    it("vendors named icons to outDir and adds them to the sprite", async () => {
+      const { output } = await buildWith([
+        svgSprite({ include: [{ from: baseDir, names: ["check"], outDir }] }),
+      ]);
+
+      expect(existsSync(join(outDir, "check.svg"))).toBe(true);
+
+      const asset = output.find(
+        (item): item is Rollup.OutputAsset =>
+          item.type === "asset" && /sprite-.*\.svg$/.test(item.fileName),
+      );
+      expect(String(asset?.source)).toContain('<symbol id="check"');
+    });
   });
 });

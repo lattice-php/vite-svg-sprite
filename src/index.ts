@@ -1,10 +1,30 @@
 import { resolve } from "node:path";
 import type { Plugin } from "vite";
-import { buildSprite, type BuildSpriteOptions, type Sprite } from "./build-sprite.js";
+import {
+  buildSprite,
+  extractIcons,
+  writeIconTypes,
+  writePhpEnum,
+  type BuildSpriteOptions,
+  type ExtractIconsOptions,
+  type IconTypesOptions,
+  type PhpEnumOptions,
+  type Sprite,
+} from "./build-sprite.js";
 
 export interface SvgSpriteOptions extends BuildSpriteOptions {
   /** Directories globbed for `*.svg`. Later directories win on collisions. */
-  iconDirs: string[];
+  iconDirs?: string[];
+  /**
+   * Named icons to idempotently materialize from a source (e.g. lucide-static)
+   * into `outDir` before building — so the vendored SVGs can be committed and
+   * are also included in the sprite. Each `outDir` is globbed like an iconDir.
+   */
+  include?: ExtractIconsOptions[];
+  /** Emit a typed module of the sprite's icon names for import/autocomplete. */
+  dts?: IconTypesOptions;
+  /** Emit a backed PHP enum of the sprite's icon names. */
+  phpEnum?: PhpEnumOptions;
   virtualModuleId?: string;
   assetName?: string;
 }
@@ -18,33 +38,40 @@ export function svgSprite(options: SvgSpriteOptions): Plugin {
   const virtualModuleId = options.virtualModuleId ?? "virtual:svg-sprite";
   const resolvedVirtualModuleId = `\0${virtualModuleId}`;
   const assetName = options.assetName ?? "sprite.svg";
-  const iconDirs = options.iconDirs.map((dir) => resolve(dir));
+  const include = options.include ?? [];
+  // Each include's outDir is vendored then globbed alongside the explicit dirs.
+  const iconDirs = [
+    ...include.map((source) => resolve(source.outDir)),
+    ...(options.iconDirs ?? []).map((dir) => resolve(dir)),
+  ];
 
   let command: "build" | "serve" = "build";
   let sprite: Sprite = { source: "", ids: [] };
   let referenceId: string | undefined;
 
   const rebuild = (): void => {
+    for (const source of include) {
+      extractIcons(source);
+    }
     sprite = buildSprite(iconDirs, options);
+    if (options.dts) {
+      writeIconTypes(sprite.ids, options.dts);
+    }
+    if (options.phpEnum) {
+      writePhpEnum(sprite.ids, options.phpEnum);
+    }
   };
 
   const moduleBody = (): string => {
-    const ids = JSON.stringify(sprite.ids);
-
-    if (command === "build") {
-      // Rollup rewrites the placeholder to the final hashed, base-prefixed URL.
-      return (
-        `export const href = import.meta.ROLLUP_FILE_URL_${referenceId};\n` +
-        `export const ids = ${ids};\n` +
-        `export const source = "";\n` +
-        `export default { href, ids, source };\n`
-      );
-    }
+    // In build, Rollup rewrites the placeholder to the final hashed, base-prefixed
+    // URL; in dev the sprite is inlined via `source` instead.
+    const href = command === "build" ? `import.meta.ROLLUP_FILE_URL_${referenceId}` : '""';
+    const source = command === "build" ? '""' : JSON.stringify(sprite.source);
 
     return (
-      `export const href = "";\n` +
-      `export const ids = ${ids};\n` +
-      `export const source = ${JSON.stringify(sprite.source)};\n` +
+      `export const href = ${href};\n` +
+      `export const ids = ${JSON.stringify(sprite.ids)};\n` +
+      `export const source = ${source};\n` +
       `export default { href, ids, source };\n`
     );
   };
@@ -82,11 +109,12 @@ export function svgSprite(options: SvgSpriteOptions): Plugin {
       }
 
       const handleChange = (file: string): void => {
-        if (!file.toLowerCase().endsWith(".svg")) {
+        const resolved = resolve(file);
+        if (!resolved.toLowerCase().endsWith(".svg")) {
           return;
         }
 
-        if (!iconDirs.some((dir) => resolve(file).startsWith(dir))) {
+        if (!iconDirs.some((dir) => resolved.startsWith(dir))) {
           return;
         }
 
@@ -107,5 +135,19 @@ export function svgSprite(options: SvgSpriteOptions): Plugin {
   };
 }
 
-export { buildSprite, svgToSymbol, defaultSvgoConfig } from "./build-sprite.js";
-export type { BuildSpriteOptions, Sprite, SymbolIdContext } from "./build-sprite.js";
+export {
+  buildSprite,
+  extractIcons,
+  writeIconTypes,
+  writePhpEnum,
+  svgToSymbol,
+  defaultSvgoConfig,
+} from "./build-sprite.js";
+export type {
+  BuildSpriteOptions,
+  ExtractIconsOptions,
+  IconTypesOptions,
+  PhpEnumOptions,
+  Sprite,
+  SymbolIdContext,
+} from "./build-sprite.js";
