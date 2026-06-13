@@ -1,4 +1,4 @@
-import { resolve } from "node:path";
+import { isAbsolute, relative, resolve } from "node:path";
 import type { Plugin } from "vite";
 import {
   buildSprite,
@@ -38,27 +38,29 @@ export function svgSprite(options: SvgSpriteOptions): Plugin {
   const virtualModuleId = options.virtualModuleId ?? "virtual:svg-sprite";
   const resolvedVirtualModuleId = `\0${virtualModuleId}`;
   const assetName = options.assetName ?? "sprite.svg";
-  const include = options.include ?? [];
-  // Each include's outDir is vendored then globbed alongside the explicit dirs.
-  const iconDirs = [
-    ...include.map((source) => resolve(source.outDir)),
-    ...(options.iconDirs ?? []).map((dir) => resolve(dir)),
-  ];
 
   let command: "build" | "serve" = "build";
+  let root = process.cwd();
   let sprite: Sprite = { source: "", ids: [] };
   let referenceId: string | undefined;
+  let include: ExtractIconsOptions[] = [];
+  let iconDirs: string[] = [];
 
   const rebuild = (): void => {
+    resolvePaths();
+
     for (const source of include) {
       extractIcons(source);
     }
+
     sprite = buildSprite(iconDirs, options);
+
     if (options.dts) {
-      writeIconTypes(sprite.ids, options.dts);
+      writeIconTypes(sprite.ids, { ...options.dts, file: resolveFromRoot(options.dts.file) });
     }
+
     if (options.phpEnum) {
-      writePhpEnum(sprite.ids, options.phpEnum);
+      writePhpEnum(sprite.ids, { ...options.phpEnum, file: resolveFromRoot(options.phpEnum.file) });
     }
   };
 
@@ -76,11 +78,25 @@ export function svgSprite(options: SvgSpriteOptions): Plugin {
     );
   };
 
+  const resolveFromRoot = (path: string): string => (isAbsolute(path) ? path : resolve(root, path));
+
+  const resolvePaths = (): void => {
+    include = (options.include ?? []).map((source) => ({
+      ...source,
+      outDir: resolveFromRoot(source.outDir),
+    }));
+    iconDirs = [
+      ...include.map((source) => source.outDir),
+      ...(options.iconDirs ?? []).map((dir) => resolveFromRoot(dir)),
+    ];
+  };
+
   return {
     name: "@lattice-php/vite-svg-sprite",
 
     configResolved(config) {
       command = config.command;
+      root = config.root;
     },
 
     buildStart() {
@@ -104,6 +120,8 @@ export function svgSprite(options: SvgSpriteOptions): Plugin {
     },
 
     configureServer(server) {
+      resolvePaths();
+
       for (const dir of iconDirs) {
         server.watcher.add(dir);
       }
@@ -114,7 +132,7 @@ export function svgSprite(options: SvgSpriteOptions): Plugin {
           return;
         }
 
-        if (!iconDirs.some((dir) => resolved.startsWith(dir))) {
+        if (!iconDirs.some((dir) => isWithinDirectory(resolved, dir))) {
           return;
         }
 
@@ -133,6 +151,12 @@ export function svgSprite(options: SvgSpriteOptions): Plugin {
       server.watcher.on("unlink", handleChange);
     },
   };
+}
+
+function isWithinDirectory(path: string, dir: string): boolean {
+  const relativePath = relative(dir, path);
+
+  return relativePath === "" || (!relativePath.startsWith("..") && !isAbsolute(relativePath));
 }
 
 export {
