@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/lattice-php/vite-svg-sprite/compare/0.2.0...0.2.1) (2026-06-13)
+
+
+### Bug Fixes
+
+* resolve sprite paths from vite root ([403343d](https://github.com/lattice-php/vite-svg-sprite/commit/403343d9b3ec648dc8f4369a124856c06cc9c6f6))
+* resolve sprite paths from vite root ([35e3250](https://github.com/lattice-php/vite-svg-sprite/commit/35e325018d21a60d675b00016e47392c91467395))
+
 ## [0.2.0](https://github.com/lattice-php/vite-svg-sprite/compare/0.1.0...0.2.0) (2026-06-12)
 
 
