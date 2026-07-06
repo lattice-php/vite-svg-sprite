@@ -32,13 +32,13 @@ describe("extractIcons", () => {
     expect(statSync(join(outDir, "check.svg")).mtime.getFullYear()).toBe(2020);
   });
 
-  it("removes stale svgs no longer requested", () => {
+  it("leaves unrelated svgs in the target untouched", () => {
     mkdirSync(outDir, { recursive: true });
-    writeFileSync(join(outDir, "stale.svg"), "<svg/>");
+    writeFileSync(join(outDir, "hand-authored.svg"), "<svg/>");
 
     extractIcons({ from: baseDir, names: ["check"], outDir });
 
-    expect(existsSync(join(outDir, "stale.svg"))).toBe(false);
+    expect(existsSync(join(outDir, "hand-authored.svg"))).toBe(true);
     expect(existsSync(join(outDir, "check.svg"))).toBe(true);
   });
 
