@@ -94,9 +94,11 @@ extractIcons({
 });
 ```
 
-It writes only files whose content changed, removes any `*.svg` no longer in
-`names`, and throws if a requested icon is missing from the source — so running
-it twice is a no-op.
+It writes only files whose content changed, and throws if a requested icon is
+missing from the source — so running it twice is a no-op. Other files in `outDir`
+are left untouched, so hand-authored icons and other sources can share the
+directory; drop an icon from `names` and its committed `*.svg` simply stays until
+you remove it.
 
 ## Generating a type for the icons
 

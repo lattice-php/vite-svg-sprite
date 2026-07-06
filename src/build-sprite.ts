@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { basename, dirname, extname, isAbsolute, join, resolve } from "node:path";
 import { optimize, type Config as SvgoConfig } from "svgo";
@@ -177,9 +177,10 @@ export interface ExtractIconsOptions {
 
 /**
  * Idempotently materializes `names` from `from` into `outDir`: writes only files
- * whose content changed and removes any `*.svg` not in `names`, so re-running is
- * a no-op once synced. Throws if any requested icon is missing from the source.
- * Returns the synced icon names.
+ * whose content changed, so re-running is a no-op once synced. Other files in
+ * `outDir` are left untouched — the copy never deletes anything, so hand-authored
+ * icons and other sources can share the directory. Throws if any requested icon
+ * is missing from the source. Returns the synced icon names.
  */
 export function extractIcons({ from, names, outDir }: ExtractIconsOptions): string[] {
   const sourceDir = resolveSourceDir(from);
@@ -200,12 +201,6 @@ export function extractIcons({ from, names, outDir }: ExtractIconsOptions): stri
   if (missing.length > 0) {
     const list = [...new Set(missing)].sort().join(", ");
     throw new Error(`[vite-svg-sprite] Missing icons in "${from}": ${list}`);
-  }
-
-  for (const file of readdirSync(target)) {
-    if (file.endsWith(".svg") && !wanted.has(file)) {
-      rmSync(join(target, file));
-    }
   }
 
   for (const [file, content] of wanted) {
