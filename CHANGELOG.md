@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.2](https://github.com/lattice-php/vite-svg-sprite/compare/0.2.1...0.2.2) (2026-07-06)
+
+
+### Bug Fixes
+
+* never delete unrelated files when extracting icons ([77aca66](https://github.com/lattice-php/vite-svg-sprite/commit/77aca66ec99fe2479705f0ec9d15d18c6c1cb8cf))
+* never delete unrelated files when extracting icons ([51ca5ce](https://github.com/lattice-php/vite-svg-sprite/commit/51ca5cede5c291fa93a4713ca2d1c44ae2c63f9a))
+
 ## [0.2.1](https://github.com/lattice-php/vite-svg-sprite/compare/0.2.0...0.2.1) (2026-06-13)
 
 
