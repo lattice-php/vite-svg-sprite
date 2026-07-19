@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/lattice-php/vite-svg-sprite/compare/0.2.2...0.3.0) (2026-07-19)
+
+
+### Features
+
+* configurable indentation for generated icon types ([119520a](https://github.com/lattice-php/vite-svg-sprite/commit/119520a65ec6f826010bfeb4c7dba7737c0e6978))
+* configurable indentation for generated icon types ([6fa66cf](https://github.com/lattice-php/vite-svg-sprite/commit/6fa66cf3cdd7f3c1b48fd6d3d7bd87a2e6a913e9))
+
 ## [0.2.2](https://github.com/lattice-php/vite-svg-sprite/compare/0.2.1...0.2.2) (2026-07-06)
 
 
