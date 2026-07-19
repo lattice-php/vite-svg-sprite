@@ -1,11 +1,14 @@
+import { readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { describe, expect, it } from "vitest";
-import { buildSprite, svgToSymbol } from "../src/index.js";
+import { afterEach, describe, expect, it } from "vitest";
+import { buildSprite, svgToSymbol, writeIconTypes } from "../src/index.js";
 
 const fixtures = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 const baseDir = join(fixtures, "base");
 const appDir = join(fixtures, "app");
+const tmpDir = tmpdir();
 
 describe("buildSprite", () => {
   it("compiles every svg into a symbol keyed by filename", () => {
@@ -63,5 +66,23 @@ describe("buildSprite", () => {
     const sprite = buildSprite([baseDir], { symbolId: ({ name }) => `icon-${name}` });
 
     expect(sprite.ids).toEqual(["icon-check", "icon-house"]);
+  });
+});
+
+describe("writeIconTypes", () => {
+  const file = join(tmpDir, "sprite-icons.ts");
+  afterEach(() => rmSync(file, { force: true }));
+
+  it("honors a custom indent", () => {
+    writeIconTypes(["arrow-up", "x"], {
+      file,
+      augmentModule: "@lattice-php/lattice",
+      augmentInterface: "KnownIcons",
+      indent: "\t",
+    });
+    const content = readFileSync(file, "utf8");
+
+    expect(content).toContain(`export const iconNames = [\n\t"arrow-up",\n\t"x",\n] as const;`);
+    expect(content).toContain(`\tinterface KnownIcons {\n\t\t"arrow-up": true;\n\t\tx: true;\n\t}`);
   });
 });
